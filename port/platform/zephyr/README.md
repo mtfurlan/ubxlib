@@ -77,11 +77,28 @@ socat /dev/pts/3,echo=0,raw /dev/pts/3,echo=0,raw
 ...would loop `/dev/pts/3` (in the example above UART 0) back on itself.
 
 ## Device Tree
-Zephyr pin choices for any HW peripheral managed by Zephyr (e.g. UART, I2C, SPI, etc.) are made at compile-time in the Zephyr device tree, they cannot be passed into the functions as run-time variables.  Look in the `zephyr/zephyr.dts` file located in your build directory to find the resulting pin allocations for these peripherals.
+`ubxlib` uses HW peripherals managed by Zephyr in the Device Tree (e.g. UART, I2C, SPI, etc.), but does not place the u-blox module as a node inside the device tree.
+
+Instead, the user must pass to `ubxlib` the HW block your u-blox module is connected to (e.g. UART 0, UART 1, etc.).
+
+For example if we want to put a device on I2C 2:
+* In the devicetree configure `&i2c2`
+* In your code, put the following in your `uDeviceCfg_t` that you pass to `uDeviceOpen`:
+  ```c
+  static const uDeviceCfg_t gDeviceCfg = {
+      ...
+      .transportType = U_DEVICE_TRANSPORT_TYPE_I2C,
+      .transportCfg = {
+          .cfgI2c = {
+              .i2c = 2, // we setup i2c2 in the device tree
+              .alreadyOpen = true
+          },
+      },
+      ...
+  };
+  ```
 
 If you want to find out more about device tree please see Zephyr [Introduction to devicetree](https://docs.zephyrproject.org/latest/guides/dts/intro.html)
-
-You will, though, still need to pass into `ubxlib` the HW block that is used: e.g. UART 0, UART 1, etc.  The UARTs, for instance, will be named `uart0`, `uart1`... in the device tree; the ending number is the value you should use to tell `ubxlib` what device to open.
 
 ## Additional Notes
 - Always clean the build directory when upgrading to a new `ubxlib` version.
